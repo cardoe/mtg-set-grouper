@@ -1,5 +1,5 @@
-import { describe, test, expect, beforeEach } from "vitest";
-import { deselectCardFromSets, Card } from "../services/cardService";
+import { describe, test, expect, vi, beforeEach } from "vitest";
+import { deselectCardFromSets, fetchCardSets , Card } from "../services/cardService";
 
 describe("Card Service - Deselecting and Filtering", () => {
   let testSetGroups: [string, Card[]][];
@@ -57,5 +57,69 @@ describe("Card Service - Deselecting and Filtering", () => {
     ]);
 
     expect(filteredSets.every(([_, cards]) => cards.length === 0)).toBe(true);
+  });
+});
+
+describe("Card Service - Caching & API Fetching", () => {
+  const mockCardNames = ["Evolving Wilds", "Delighted Halfling"];
+  const mockApiResponse = {
+    object: "list",
+    data: [
+      {
+        name: "Evolving Wilds",
+        set_name: "Core Set 2021",
+        colors: [],
+        prices: { usd: "0.50" },
+        image_uris: { normal: "https://example.com/image.jpg" },
+      },
+    ],
+  };
+
+  beforeEach(() => {
+    localStorage.clear(); // Reset cache before each test
+    global.fetch = vi.fn(() =>
+      Promise.resolve(new Response(JSON.stringify(mockApiResponse), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }))
+    );
+  });
+
+  test("Uses cached data if available and fresh", async () => {
+  const cardNames = ["Evolving Wilds"];
+    const cacheData = {
+      timestamp: Date.now(),
+      data: mockApiResponse,
+    };
+    localStorage.setItem("card_Evolving Wilds", JSON.stringify(cacheData));
+
+    const result = await fetchCardSets(cardNames);
+    expect(result.length).toBe(1);
+    expect(fetch).not.toHaveBeenCalled(); // Should NOT call API if cache is valid
+  });
+
+  test("Fetches new data if cache is missing", async () => {
+    const result = await fetchCardSets(mockCardNames);
+    expect(result.length).toBe(1);
+    expect(fetch).toHaveBeenCalled(); // Should call API if no cache
+  });
+
+  test("Fetches new data if cache format is outdated", async () => {
+    const outdatedCache = {
+      data: mockApiResponse, // Missing `timestamp`
+    };
+    localStorage.setItem("card_Evolving Wilds", JSON.stringify(outdatedCache));
+
+    const result = await fetchCardSets(mockCardNames);
+    expect(result.length).toBe(1);
+    expect(fetch).toHaveBeenCalled(); // Should call API if cache is outdated
+  });
+
+  test("Handles JSON parsing errors in cache", async () => {
+    localStorage.setItem("card_Evolving Wilds", "{invalid JSON");
+
+    const result = await fetchCardSets(mockCardNames);
+    expect(result.length).toBe(1);
+    expect(fetch).toHaveBeenCalled(); // Should fetch new data if cache is corrupt
   });
 });
