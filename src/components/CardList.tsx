@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import Accordion from "react-bootstrap/Accordion";
 import Form from "react-bootstrap/Form";
 import { Card } from "../services/cardService";
@@ -12,44 +12,51 @@ interface CardListProps {
 }
 
 const CardList: React.FC<CardListProps> = ({ setGroups, toggleImage, deselectCard, priceFilters }) => {
+  const sortedFilteredGroups = useMemo(() => {
+    return setGroups
+      .map(([setName, cards]) => {
+        // Apply price filtering
+        const filteredCards = cards.filter((card) => priceFilters[card.priceCategory]);
+
+        return [setName, filteredCards] as [string, Card[]];
+      })
+      .filter(([_, cards]) => cards.length > 0) // Remove empty sets
+      .sort((a, b) => b[1].length - a[1].length); // Resort by number of matching cards
+  }, [setGroups, priceFilters]);
+
   return (
     <Accordion className="mt-4" data-testid="card-results">
-      {setGroups.map(([setName, cards], index) => {
-        const filteredCards = cards.filter((card) => priceFilters[card.priceCategory]);
-        if (filteredCards.length === 0) return null; // Hide empty sets
-
-        return (
-          <Accordion.Item eventKey={index.toString()} key={setName}>
-            <Accordion.Header>{setName} ({filteredCards.length} cards)</Accordion.Header>
-            <Accordion.Body>
-              {filteredCards.map((card, i) => (
-                <Form.Check
-                  key={i}
-                  type="checkbox"
-                  role="checkbox"
-                  aria-label={card.name}
-                  onChange={() => deselectCard(card.name)}
-                  label={
-                    <>
-                      <span onClick={() => toggleImage(card)} style={{ cursor: "pointer", textDecoration: "underline" }}>
-                        {card.name}
-                      </span>
-                      &nbsp;
-                      <span>
-                        <ColorSymbols colors={card.colors} />
-                      </span>
-                      &nbsp;
-                      <span>
-                        (${card.price.toFixed(2)})
-                      </span>
-                    </>
-                  }
-                />
-              ))}
-            </Accordion.Body>
-          </Accordion.Item>
-        );
-      })}
+      {sortedFilteredGroups.map(([setName, cards]) => (
+        <Accordion.Item eventKey={setName} key={setName}>
+          <Accordion.Header>{setName} ({cards.length} cards)</Accordion.Header>
+          <Accordion.Body>
+            {cards.map((card, i) => (
+              <Form.Check
+                key={i}
+                type="checkbox"
+                role="checkbox"
+                aria-label={card.name}
+                onChange={() => deselectCard(card.name)}
+                label={
+                  <>
+                    <span onClick={() => toggleImage(card)} style={{ cursor: "pointer", textDecoration: "underline" }}>
+                      {card.name}
+                    </span>
+                    &nbsp;
+                    <span>
+                      <ColorSymbols colors={card.colors} />
+                    </span>
+                    &nbsp;
+                    <span>
+                      (${card.price.toFixed(2)})
+                    </span>
+                  </>
+                }
+              />
+            ))}
+          </Accordion.Body>
+        </Accordion.Item>
+      ))}
     </Accordion>
   );
 };
