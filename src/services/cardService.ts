@@ -53,7 +53,7 @@ export const fetchCardSets = async (cardNames: string[]): Promise<[string, Card[
 
     console.log(`Fetching fresh data for ${card}`);
     try {
-      const response = await fetch(`https://api.scryfall.com/cards/search?q=${encodeURIComponent(card)}&unique=prints`);
+      const response = await fetch(`https://api.scryfall.com/cards/search?q=!"${encodeURIComponent(card)}"&unique=prints`);
       const data = await response.json();
 
       if (data.data && data.object && data.object === "list") {
