@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { saveAs } from "file-saver";
 import Papa from "papaparse";
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -14,19 +14,12 @@ import { extractCardNames, fetchCardSets, deselectCardFromSets, Card } from "./s
 const App: React.FC = () => {
   const [inputText, setInputText] = useState<string>("");
   const [setGroups, setSetGroups] = useState<[string, Card[]][]>([]);
-  const [darkMode, setDarkMode] = useState<boolean>(false);
   const [selectedCard, setSelectedCard] = useState<Card | null>(null);
   const [showPriceFilters, setShowPriceFilters] = useState<{ [key: string]: boolean }>({
     "$": true,
     "$$": true,
     "$$$": true
   });
-
-  useEffect(() => {
-    const savedDarkMode = localStorage.getItem("darkMode") === "true";
-    setDarkMode(savedDarkMode);
-    document.documentElement.setAttribute("data-bs-theme", savedDarkMode ? "dark" : "light");
-  }, []);
 
   const processCards = async () => {
     const cardNames = extractCardNames(inputText);
@@ -61,7 +54,7 @@ const App: React.FC = () => {
     <Container fluid className="mt-4">
       <h1 className="text-center">MTG Set Grouper</h1>
 
-      <DarkModeToggle darkMode={darkMode} setDarkMode={setDarkMode} />
+      <DarkModeToggle />
 
       <Row className="mt-4">
         <Col lg={6} md={12} className="d-flex flex-column align-items-center">
