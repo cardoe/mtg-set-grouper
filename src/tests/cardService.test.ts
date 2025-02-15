@@ -1,5 +1,65 @@
 import { describe, test, expect, vi, beforeEach } from "vitest";
-import { deselectCardFromSets, fetchCardSets , Card } from "../services/cardService";
+import { deselectCardFromSets, extractCardNames, fetchCardSets , Card } from "../services/cardService";
+
+describe("extractCardNames", () => {
+  test("Extracts card names without quantities or sets", () => {
+    const input = `Evolving Wilds
+Delighted Halfling`;
+    expect(extractCardNames(input)).toEqual(["Evolving Wilds", "Delighted Halfling"]);
+  });
+
+  test("Extracts card names and ignores set names", () => {
+    const input = `1 Evolving Wilds (XYZ)
+2 Delighted Halfling (ABC)`;
+    expect(extractCardNames(input)).toEqual(["Evolving Wilds", "Delighted Halfling"]);
+  });
+
+  test("Handles mixed formatting with spaces", () => {
+    const input = ` 1 Banishing Light (SET)  
+  2 Chasm Stalker  `;
+    expect(extractCardNames(input)).toEqual(["Banishing Light", "Chasm Stalker"]);
+  });
+
+  test("Handles missing quantities", () => {
+    const input = `Evolving Wilds (SET)
+Delighted Halfling`;
+    expect(extractCardNames(input)).toEqual(["Evolving Wilds", "Delighted Halfling"]);
+  });
+
+  test("Handles empty lines and comments", () => {
+    const input = `
+1 Evolving Wilds (SET)
+
+/ This is a comment
+
+2 Delighted Halfling
+`;
+    expect(extractCardNames(input)).toEqual(["Evolving Wilds", "Delighted Halfling"]);
+  });
+
+  test("Handles cards without set names", () => {
+    const input = `3 Chasm Stalker
+Banishing Light`;
+    expect(extractCardNames(input)).toEqual(["Chasm Stalker", "Banishing Light"]);
+  });
+
+  test("Returns an empty array for invalid input", () => {
+    const input = `
+
+/ Just a comment
+
+ / Another comment
+
+`;
+    expect(extractCardNames(input)).toEqual([]);
+  });
+
+  test("Throws an error when input is not a string", () => {
+    expect(() => extractCardNames(123 as any)).toThrow(TypeError);
+    expect(() => extractCardNames(null as any)).toThrow(TypeError);
+    expect(() => extractCardNames(undefined as any)).toThrow(TypeError);
+  });
+});
 
 describe("Card Service - Deselecting and Filtering", () => {
   let testSetGroups: [string, Card[]][];

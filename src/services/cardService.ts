@@ -12,11 +12,15 @@ type SetGroups = { [setName: string]: Card[] };
 
 // **Extracts card names from text input**
 export const extractCardNames = (input: string): string[] => {
+  const cardRegex = /^(?:\d+\s+)?([^(]+)(?:\s*\(.*\))?$/;
+
   return input
-    .split("\n")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0 && !line.startsWith("/"))
     .map((line) => {
-      const match = line.match(/\d+\s+(.+?)\s+\(.+\)/);
-      return match ? match[1] : null;
+      const match = line.match(cardRegex);
+      return match ? match[1].trim() : null;
     })
     .filter((name): name is string => name !== null);
 };
