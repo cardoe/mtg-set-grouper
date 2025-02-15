@@ -82,6 +82,7 @@ const App: React.FC = () => {
         <Col lg={6} md={12}>
           <div className="mb-3">
             <strong>Filter by Price:</strong>
+            &nbsp;
             {["$", "$$", "$$$"].map((symbol) => (
               <Form.Check
                 key={symbol}
