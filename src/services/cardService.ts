@@ -4,6 +4,7 @@ export interface Card {
   name: string;
   colors: string[];
   imageUrl: string;
+  price: number;
   priceCategory: PriceCategory;
 }
 
@@ -92,6 +93,7 @@ const processScryfallData = (data: any, groups: SetGroups) => {
         name: cardData.name,
         colors: cardData.color_identity || [],
         imageUrl: cardData.image_uris?.normal || "",
+        price,
         priceCategory,
       });
     }

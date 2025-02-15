@@ -9,15 +9,15 @@ describe("Card Service - Deselecting and Filtering", () => {
       [
         "Set A",
         [
-          { name: "Evolving Wilds", colors: ["G"], imageUrl: "img1.jpg", priceCategory: "$" },
-          { name: "Delighted Halfling", colors: ["W"], imageUrl: "img2.jpg", priceCategory: "$$" },
+          { name: "Evolving Wilds", colors: ["G"], imageUrl: "img1.jpg", price: 0.27, priceCategory: "$" },
+          { name: "Delighted Halfling", colors: ["W"], imageUrl: "img2.jpg", price: 9.42, priceCategory: "$$" },
         ],
       ],
       [
         "Set B",
         [
-          { name: "Evolving Wilds", colors: ["G"], imageUrl: "img1.jpg", priceCategory: "$" },
-          { name: "Banishing Light", colors: ["W"], imageUrl: "img3.jpg", priceCategory: "$$$" },
+          { name: "Evolving Wilds", colors: ["G"], imageUrl: "img1.jpg", price: 0.27, priceCategory: "$" },
+          { name: "Banishing Light", colors: ["W"], imageUrl: "img3.jpg", price: 1.64, priceCategory: "$$$" },
         ],
       ],
     ];

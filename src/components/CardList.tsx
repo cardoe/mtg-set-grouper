@@ -38,6 +38,10 @@ const CardList: React.FC<CardListProps> = ({ setGroups, toggleImage, deselectCar
                       <span>
                         <ColorSymbols colors={card.colors} />
                       </span>
+                      &nbsp;
+                      <span>
+                        (${card.price.toFixed(2)})
+                      </span>
                     </>
                   }
                 />
