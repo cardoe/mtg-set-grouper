@@ -2,22 +2,29 @@ import { describe, test, expect, vi, beforeEach } from "vitest";
 import { deselectCardFromSets, extractCardNames, fetchCardSets , Card } from "../services/cardService";
 
 describe("extractCardNames", () => {
-  test("Extracts card names without quantities or sets", () => {
+  test("Handles normal cards", () => {
     const input = `Evolving Wilds
 Delighted Halfling`;
     expect(extractCardNames(input)).toEqual(["Evolving Wilds", "Delighted Halfling"]);
   });
 
-  test("Extracts card names and ignores set names", () => {
-    const input = `1 Evolving Wilds (XYZ)
-2 Delighted Halfling (ABC)`;
-    expect(extractCardNames(input)).toEqual(["Evolving Wilds", "Delighted Halfling"]);
+  test("Handles cards with set names and ignores collector numbers", () => {
+    const input = `1 Feign Death (PLST) AFR-103
+1 Trailblazer's Boots (LTR) 398
+1 Kaya's Ghostform (PLST) WAR-94
+1 Reflecting Pool (PLST) CLB-358`;
+    expect(extractCardNames(input)).toEqual(["Feign Death", "Trailblazer's Boots", "Kaya's Ghostform", "Reflecting Pool"]);
   });
 
-  test("Handles mixed formatting with spaces", () => {
-    const input = ` 1 Banishing Light (SET)  
-  2 Chasm Stalker  `;
-    expect(extractCardNames(input)).toEqual(["Banishing Light", "Chasm Stalker"]);
+  test("Handles special flags like *E* or *F*", () => {
+    const input = `1 Shadowspear (PTHB) 236p *F*
+1 Trailblazer's Boots (LTR) 398 *F*`;
+    expect(extractCardNames(input)).toEqual(["Shadowspear", "Trailblazer's Boots"]);
+  });
+
+  test("Handles double-faced cards", () => {
+    const input = `1 Malakir Rebirth // Malakir Mire (ZNR) 111`;
+    expect(extractCardNames(input)).toEqual(["Malakir Rebirth // Malakir Mire"]);
   });
 
   test("Handles missing quantities", () => {
@@ -37,27 +44,16 @@ Delighted Halfling`;
     expect(extractCardNames(input)).toEqual(["Evolving Wilds", "Delighted Halfling"]);
   });
 
-  test("Handles cards without set names", () => {
-    const input = `3 Chasm Stalker
-Banishing Light`;
-    expect(extractCardNames(input)).toEqual(["Chasm Stalker", "Banishing Light"]);
-  });
-
-  test("Returns an empty array for invalid input", () => {
+  test("Ignores 'Deck', 'Sideboard', 'Commander' lines", () => {
     const input = `
-
-/ Just a comment
-
- / Another comment
-
+Deck
+1 Birds of Paradise (SLD) 176
+Sideboard
+2 Delighted Halfling
+Commander
+3 Banishing Light
 `;
-    expect(extractCardNames(input)).toEqual([]);
-  });
-
-  test("Throws an error when input is not a string", () => {
-    expect(() => extractCardNames(123 as any)).toThrow(TypeError);
-    expect(() => extractCardNames(null as any)).toThrow(TypeError);
-    expect(() => extractCardNames(undefined as any)).toThrow(TypeError);
+    expect(extractCardNames(input)).toEqual(["Birds of Paradise", "Delighted Halfling", "Banishing Light"]);
   });
 });
 

@@ -12,7 +12,8 @@ type SetGroups = { [setName: string]: Card[] };
 
 // **Extracts card names from text input**
 export const extractCardNames = (input: string): string[] => {
-  const cardRegex = /^(?:\d+\s+)?([^(]+)(?:\s*\(.*\))?$/;
+  const cardRegex = /^(?:\d+\s+)?(.+?)(?:\s*\([A-Z0-9]+\))?(?:\s+[A-Z0-9-]+\d+|\s+\*\w*\*)?$/;
+
   const skipKeywords = new Set(["Deck", "Sideboard", "Commander"]);
 
   return input
@@ -25,7 +26,7 @@ export const extractCardNames = (input: string): string[] => {
     )
     .map((line) => {
       const match = line.match(cardRegex);
-      return match ? match[1].trim() : null;
+      return match ? match[1].replace(/\s*\([A-Z0-9]+\)\s*[A-Z0-9-]*\d+[a-zA-Z]*$/, "").trim() : null;
     })
     .filter((name): name is string => name !== null);
 };
