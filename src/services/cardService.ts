@@ -90,7 +90,7 @@ const processScryfallData = (data: any, groups: SetGroups) => {
     if (!groups[setName].some((c) => c.name === cardData.name)) {
       groups[setName].push({
         name: cardData.name,
-        colors: cardData.colors || [],
+        colors: cardData.color_identity || [],
         imageUrl: cardData.image_uris?.normal || "",
         priceCategory,
       });

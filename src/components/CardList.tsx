@@ -34,6 +34,7 @@ const CardList: React.FC<CardListProps> = ({ setGroups, toggleImage, deselectCar
                       <span onClick={() => toggleImage(card)} style={{ cursor: "pointer", textDecoration: "underline" }}>
                         {card.name}
                       </span>
+                      &nbsp;
                       <span>
                         <ColorSymbols colors={card.colors} />
                       </span>

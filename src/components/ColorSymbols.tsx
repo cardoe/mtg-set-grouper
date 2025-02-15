@@ -1,16 +1,26 @@
 import React from "react";
 
-const colorIcons: { [key: string]: string } = {
-  W: "⚪", // White
-  U: "🔵", // Blue
-  B: "⚫", // Black
-  R: "🔴", // Red
-  G: "🟢", // Green
-  C: "🟤", // Colorless
+const manaSymbols: { [key: string]: string } = {
+  W: "mana/W.svg", // White
+  U: "mana/U.svg", // Blue
+  B: "mana/B.svg", // Black
+  R: "mana/R.svg", // Red
+  G: "mana/G.svg", // Green
+  C: "mana/C.svg", // Colorless
 };
 
-const ColorSymbols: React.FC<{ colors: string[] }> = ({ colors }) => {
-  return <span>{colors.map((color) => colorIcons[color] || "🟤").join(" ")}</span>;
+interface ColorSymbolsProps {
+  colors: string[];
+}
+
+const ColorSymbols: React.FC<ColorSymbolsProps> = ({ colors }) => {
+  return (
+    <span className="mana-symbols">
+      {colors.map((color) => (
+        <img key={color} src={manaSymbols[color]} alt={`${color} Mana`} className="mana-symbol" loading="lazy" />
+      ))}
+    </span>
+  );
 };
 
 export default ColorSymbols;
