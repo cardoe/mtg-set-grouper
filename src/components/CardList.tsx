@@ -50,17 +50,19 @@ const CardList: React.FC<CardListProps> = ({ setGroups }) => {
 
   return (
     <>
-      <div className="price-filters d-flex gap-2 mb-3">
-        {Object.keys(priceFilters).map((price) => (
-          <Button
-            key={price}
-            variant={priceFilters[price as "$" | "$$" | "$$$"] ? "primary" : "outline-secondary"}
-            onClick={() => togglePriceFilter(price as "$" | "$$" | "$$$")}
-          >
-            {price}
-          </Button>
-        ))}
-      </div>
+      {sortedFilteredGroups.length > 0 && (
+        <div className="price-filters d-flex gap-2 mb-3">
+          {Object.keys(priceFilters).map((price) => (
+            <Button
+              key={price}
+              variant={priceFilters[price as "$" | "$$" | "$$$"] ? "primary" : "outline-secondary"}
+              onClick={() => togglePriceFilter(price as "$" | "$$" | "$$$")}
+            >
+              {price}
+            </Button>
+          ))}
+        </div>
+      )}
 
       <Accordion className="mt-4">
         {sortedFilteredGroups.map(([setName, cards]) => (
