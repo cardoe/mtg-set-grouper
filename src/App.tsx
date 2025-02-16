@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { saveAs } from "file-saver";
 import Papa from "papaparse";
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -14,6 +14,25 @@ const App: React.FC = () => {
   const [inputText, setInputText] = useState<string>("");
   const [setGroups, setSetGroups] = useState<[string, Card[]][]>([]);
   const [selectedCard, setSelectedCard] = useState<Card | null>(null);
+
+
+  useEffect(() => {
+    const savedInput = localStorage.getItem("cardListInput");
+    if (savedInput) {
+      setInputText(savedInput);
+    }
+  }, []);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newText = e.target.value;
+    setInputText(newText);
+    localStorage.setItem("cardListInput", newText);
+  };
+
+  const handleClear = () => {
+    setInputText("");
+    localStorage.removeItem("cardListInput");
+  };
 
   const processCards = async () => {
     const cardNames = extractCardNames(inputText);
@@ -51,11 +70,15 @@ const App: React.FC = () => {
             style={{ minWidth: "320px", maxWidth: "400px", width: "100%" }}
             placeholder="1 Evolving Wilds (INR)&#10;2 Delighted Halfling (XYZ)"
             value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
+            onChange={handleInputChange}
           ></textarea>
 
           <Button variant="primary" className="mt-2 me-2" onClick={processCards}>
             Group Cards by Set
+          </Button>
+
+          <Button variant="danger" className="me-2" onClick={handleClear}>
+            Clear
           </Button>
 
           {setGroups.length > 0 && (
