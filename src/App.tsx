@@ -4,22 +4,16 @@ import Papa from "papaparse";
 import "bootstrap/dist/css/bootstrap.min.css";
 import Button from "react-bootstrap/Button";
 import Container from "react-bootstrap/Container";
-import Form from "react-bootstrap/Form";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
 import CardList from "./components/CardList";
 import DarkModeToggle from "./components/DarkModeToggle";
-import { extractCardNames, fetchCardSets, deselectCardFromSets, Card } from "./services/cardService";
+import { extractCardNames, fetchCardSets, Card } from "./services/cardService";
 
 const App: React.FC = () => {
   const [inputText, setInputText] = useState<string>("");
   const [setGroups, setSetGroups] = useState<[string, Card[]][]>([]);
   const [selectedCard, setSelectedCard] = useState<Card | null>(null);
-  const [showPriceFilters, setShowPriceFilters] = useState<{ [key: string]: boolean }>({
-    "$": true,
-    "$$": true,
-    "$$$": true
-  });
 
   const processCards = async () => {
     const cardNames = extractCardNames(inputText);
@@ -40,14 +34,6 @@ const App: React.FC = () => {
     const csvString = Papa.unparse(csvData);
     const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
     saveAs(blob, "mtg_set_groups.csv");
-  };
-
-  const deselectCard = (cardName: string) => {
-    setSetGroups((prev) => deselectCardFromSets(prev, cardName));
-  };
-
-  const togglePriceFilter = (priceCategory: string) => {
-    setShowPriceFilters((prev) => ({ ...prev, [priceCategory]: !prev[priceCategory] }));
   };
 
   return (
@@ -80,22 +66,7 @@ const App: React.FC = () => {
         </Col>
 
         <Col lg={6} md={12}>
-          <div className="mb-3">
-            <strong>Filter by Price:</strong>
-            &nbsp;
-            {["$", "$$", "$$$"].map((symbol) => (
-              <Form.Check
-                key={symbol}
-                inline
-                id={`price-filter-${symbol}`}
-                label={symbol}
-                type="checkbox"
-                checked={showPriceFilters[symbol]}
-                onChange={() => togglePriceFilter(symbol)}
-              />
-            ))}
-          </div>
-          <CardList setGroups={setGroups} toggleImage={setSelectedCard} deselectCard={deselectCard} priceFilters={showPriceFilters}/>
+          <CardList setGroups={setGroups} />
         </Col>
       </Row>
 
