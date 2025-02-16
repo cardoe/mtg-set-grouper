@@ -49,7 +49,7 @@ const CardList: React.FC<CardListProps> = ({ setGroups }) => {
   }, [setGroups, deselectedCards, priceFilters]);
 
   return (
-    <>
+    <div data-testid="card-results">
       {sortedFilteredGroups.length > 0 && (
         <div className="price-filters d-flex gap-2 mb-3">
           {Object.keys(priceFilters).map((price) => (
@@ -86,7 +86,7 @@ const CardList: React.FC<CardListProps> = ({ setGroups }) => {
         ))}
       </Accordion>
       {selectedCard && <CardImageModal card={selectedCard} onClose={() => setSelectedCard(null)} />}
-    </>
+    </div>
   );
 };
 

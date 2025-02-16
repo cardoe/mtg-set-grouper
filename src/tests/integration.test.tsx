@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach } from "vitest";
-import { render, queryByText, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import App from "../App";
 
@@ -19,20 +19,19 @@ describe("Integration Tests - App Functionality", () => {
     const groupButton = screen.getByText(/Group Cards by Set/i);
     await userEvent.click(groupButton);
 
-    // Get the card results section
-    const resultsSection = screen.getByTestId("card-results");
-
     // Wait for multiple "Evolving Wilds" instances to appear
     const evolvingWildsElements = await screen.findAllByText("Evolving Wilds");
     expect(evolvingWildsElements.length).toBeGreaterThan(0);
 
-    // Uncheck "$$" filter
-    const priceFilter = screen.getByLabelText("$$");
+    // Uncheck "$$$" filter
+    const priceFilter = screen.getByRole("button", { name: "$$$" });
     await userEvent.click(priceFilter);
 
     // Expect "Delighted Halfling" (which is $$) to be removed
     await waitFor(() => {
-      expect(queryByText(resultsSection, "Delighted Halfling")).toBeNull();
+      expect(screen.queryByText((_context, element) => {
+        return element?.textContent === "Delighted Halfling";
+      })).toBeNull();
     });
   });
 
