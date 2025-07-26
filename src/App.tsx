@@ -26,13 +26,13 @@ const App: React.FC = () => {
       alert("Please enter valid card names!");
       return;
     }
-    
+
     setProgress({ current: 0, total: cardNames.length, isLoading: true });
-    
+
     const onProgress = (current: number) => {
       setProgress(prev => ({ ...prev, current }));
     };
-    
+
     try {
       const sortedGroups = await fetchCardSets(cardNames, onProgress);
       setSetGroups(sortedGroups);

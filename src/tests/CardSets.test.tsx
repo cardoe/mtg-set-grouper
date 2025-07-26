@@ -235,7 +235,7 @@ describe("CardSets", () => {
   describe("Progress feedback", () => {
     test("shows progress bar and disables buttons when loading", () => {
       const loadingProgress = { current: 5, total: 10, isLoading: true };
-      
+
       render(<CardSets processCards={mockProcessCards} downloadCSV={mockDownloadCSV} setGroups={[]} progress={loadingProgress} />);
 
       // Button should show "Processing..." and be disabled
@@ -274,7 +274,7 @@ describe("CardSets", () => {
 
     test("hides CSV download button when loading", () => {
       const loadingProgress = { current: 2, total: 5, isLoading: true };
-      
+
       render(<CardSets processCards={mockProcessCards} downloadCSV={mockDownloadCSV} setGroups={mockSetGroups} progress={loadingProgress} />);
 
       // CSV button should not be visible when loading

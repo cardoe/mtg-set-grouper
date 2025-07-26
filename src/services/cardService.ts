@@ -92,7 +92,7 @@ export const extractCardNames = (input: string): string[] => {
 
 // **Fetches card data from Scryfall API**
 export const fetchCardSets = async (
-  cardNames: string[], 
+  cardNames: string[],
   onProgress?: (current: number) => void
 ): Promise<[string, Card[]][]> => {
   const groups: SetGroups = {};
@@ -147,7 +147,7 @@ export const fetchCardSets = async (
     } catch (error) {
       console.error(`Error fetching data for ${card}:`, error);
     }
-    
+
     processedCount++;
     onProgress?.(processedCount);
   }

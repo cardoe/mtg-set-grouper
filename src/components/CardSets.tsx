@@ -56,18 +56,18 @@ const CardSets: React.FC<CardSetsProps> = ({ processCards, downloadCSV, setGroup
         ></textarea>
 
         <div className="d-flex flex-wrap justify-content-center mt-2 gap-2">
-          <Button 
-            variant="primary" 
-            className="me-2" 
+          <Button
+            variant="primary"
+            className="me-2"
             onClick={() => processCards(inputText)}
             disabled={progress.isLoading}
           >
             {progress.isLoading ? "Processing..." : "Group Cards by Set"}
           </Button>
 
-          <Button 
-            variant="danger" 
-            className="me-2" 
+          <Button
+            variant="danger"
+            className="me-2"
             onClick={handleClear}
             disabled={progress.isLoading}
           >
@@ -86,8 +86,8 @@ const CardSets: React.FC<CardSetsProps> = ({ processCards, downloadCSV, setGroup
             <div className="text-center mb-2">
               Downloading card information: {progress.current} of {progress.total} cards
             </div>
-            <ProgressBar 
-              now={(progress.current / progress.total) * 100} 
+            <ProgressBar
+              now={(progress.current / progress.total) * 100}
               variant="primary"
               striped
               animated
