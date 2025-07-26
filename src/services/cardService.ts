@@ -10,6 +10,65 @@ export interface Card {
 
 type SetGroups = { [setName: string]: Card[] };
 
+// **LocalStorage management functions**
+const getStorageSize = (): number => {
+  let total = 0;
+  for (const key in localStorage) {
+    if (localStorage.hasOwnProperty(key)) {
+      total += localStorage[key].length + key.length;
+    }
+  }
+  return total;
+};
+
+const clearOldestCacheEntries = (keepCount: number = 50): void => {
+  const cacheKeys = Object.keys(localStorage)
+    .filter(key => key.startsWith('card_'))
+    .map(key => {
+      try {
+        const data = JSON.parse(localStorage.getItem(key) || '{}');
+        return { key, timestamp: data.timestamp || 0 };
+      } catch {
+        return { key, timestamp: 0 };
+      }
+    })
+    .sort((a, b) => a.timestamp - b.timestamp);
+
+  // Remove oldest entries, keeping only the specified count
+  const toRemove = cacheKeys.slice(0, Math.max(0, cacheKeys.length - keepCount));
+  toRemove.forEach(({ key }) => {
+    localStorage.removeItem(key);
+  });
+
+  if (toRemove.length > 0) {
+    console.log(`Cleared ${toRemove.length} old cache entries to free up space`);
+  }
+};
+
+const safeSetItem = (key: string, value: string): boolean => {
+  try {
+    localStorage.setItem(key, value);
+    return true;
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+      console.warn('LocalStorage quota exceeded, clearing old cache entries...');
+
+      // Clear oldest entries and try again
+      clearOldestCacheEntries(30);
+
+      try {
+        localStorage.setItem(key, value);
+        return true;
+      } catch (retryError) {
+        console.warn('Still unable to save to localStorage after cleanup, skipping cache for this item');
+        return false;
+      }
+    }
+    console.error('Error saving to localStorage:', error);
+    return false;
+  }
+};
+
 // **Extracts card names from text input**
 export const extractCardNames = (input: string): string[] => {
   const cardRegex = /^(?:\d+\s+)?(.+?)(?:\s*\([A-Z0-9]+\))?(?:\s+[A-Z0-9-]+\d+|\s+\*\w*\*)?$/;
@@ -73,8 +132,15 @@ export const fetchCardSets = async (
       const data = await response.json();
 
       if (data.data && data.object && data.object === "list") {
-        localStorage.setItem(cacheKey, JSON.stringify({ timestamp: now, data }));
+        // Always process the data first, regardless of caching success
         processScryfallData(data, groups);
+
+        // Then try to cache it for future use
+        const cacheData = JSON.stringify({ timestamp: now, data });
+        const cached = safeSetItem(cacheKey, cacheData);
+        if (!cached) {
+          console.warn(`Unable to cache data for ${card}, but card data is still processed`);
+        }
       } else {
         console.error(`Error with response for ${card}`);
       }
@@ -124,4 +190,11 @@ export const deselectCardFromSets = (setGroups: [string, Card[]][], cardName: st
   return setGroups
     .map(([setName, cards]) => [setName, cards.filter((c) => c.name !== cardName)] as [string, Card[]])
     .filter(([_, cards]) => cards.length > 0);
+};
+
+// **Export utility functions for testing**
+export const cacheUtils = {
+  getStorageSize,
+  clearOldestCacheEntries,
+  safeSetItem
 };
