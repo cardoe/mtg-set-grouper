@@ -32,9 +32,13 @@ export const extractCardNames = (input: string): string[] => {
 };
 
 // **Fetches card data from Scryfall API**
-export const fetchCardSets = async (cardNames: string[]): Promise<[string, Card[]][]> => {
+export const fetchCardSets = async (
+  cardNames: string[], 
+  onProgress?: (current: number) => void
+): Promise<[string, Card[]][]> => {
   const groups: SetGroups = {};
   const CACHE_EXPIRATION_HOURS = 96;
+  let processedCount = 0;
 
   for (const card of cardNames) {
     const cacheKey = `card_${card}`;
@@ -51,6 +55,8 @@ export const fetchCardSets = async (cardNames: string[]): Promise<[string, Card[
           if (isFresh) {
             console.log(`Using cached data for ${card}`);
             processScryfallData(parsedCache.data, groups);
+            processedCount++;
+            onProgress?.(processedCount);
             continue;
           }
         } else {
@@ -75,6 +81,9 @@ export const fetchCardSets = async (cardNames: string[]): Promise<[string, Card[
     } catch (error) {
       console.error(`Error fetching data for ${card}:`, error);
     }
+    
+    processedCount++;
+    onProgress?.(processedCount);
   }
 
   return Object.entries(groups).sort((a, b) => b[1].length - a[1].length);

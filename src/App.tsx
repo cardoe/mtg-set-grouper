@@ -9,9 +9,16 @@ import CardSets from "./components/CardSets";
 import DarkModeToggle from "./components/DarkModeToggle";
 import { extractCardNames, fetchCardSets, Card } from "./services/cardService";
 
+interface ProgressInfo {
+  current: number;
+  total: number;
+  isLoading: boolean;
+}
+
 const App: React.FC = () => {
   const [setGroups, setSetGroups] = useState<[string, Card[]][]>([]);
   const [selectedCard, setSelectedCard] = useState<Card | null>(null);
+  const [progress, setProgress] = useState<ProgressInfo>({ current: 0, total: 0, isLoading: false });
 
   const processCards = async (input: string) => {
     const cardNames = extractCardNames(input);
@@ -19,8 +26,19 @@ const App: React.FC = () => {
       alert("Please enter valid card names!");
       return;
     }
-    const sortedGroups = await fetchCardSets(cardNames);
-    setSetGroups(sortedGroups);
+    
+    setProgress({ current: 0, total: cardNames.length, isLoading: true });
+    
+    const onProgress = (current: number) => {
+      setProgress(prev => ({ ...prev, current }));
+    };
+    
+    try {
+      const sortedGroups = await fetchCardSets(cardNames, onProgress);
+      setSetGroups(sortedGroups);
+    } finally {
+      setProgress({ current: 0, total: 0, isLoading: false });
+    }
   };
 
   const downloadCSV = () => {
@@ -54,6 +72,7 @@ const App: React.FC = () => {
             processCards={processCards}
             downloadCSV={downloadCSV}
             setGroups={setGroups}
+            progress={progress}
           />
         </Col>
       </Row>
