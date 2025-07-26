@@ -1,11 +1,92 @@
-import { describe, test, expect, beforeEach } from "vitest";
+import { describe, test, expect, beforeEach, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import App from "../App";
 
+// Mock fetch responses for consistent testing
+const mockEvolvingWildsResponse = {
+  object: "list",
+  data: [
+    {
+      name: "Evolving Wilds",
+      set_name: "Khans of Tarkir",
+      colors: [],
+      prices: { usd: "0.25" },
+      image_uris: { normal: "https://example.com/evolving-wilds-ktk.jpg" },
+      promo: false,
+      oversized: false,
+    },
+    {
+      name: "Evolving Wilds",
+      set_name: "Core Set 2021",
+      colors: [],
+      prices: { usd: "0.15" },
+      image_uris: { normal: "https://example.com/evolving-wilds-m21.jpg" },
+      promo: false,
+      oversized: false,
+    },
+  ],
+};
+
+const mockDelightedHalflingResponse = {
+  object: "list",
+  data: [
+    {
+      name: "Delighted Halfling",
+      set_name: "The Lord of the Rings: Tales of Middle-earth",
+      colors: ["G"],
+      prices: { usd: "9.50" },
+      image_uris: { normal: "https://example.com/delighted-halfling.jpg" },
+      promo: false,
+      oversized: false,
+    },
+  ],
+};
+
+const mockBanishingLightResponse = {
+  object: "list",
+  data: [
+    {
+      name: "Banishing Light",
+      set_name: "Theros",
+      colors: ["W"],
+      prices: { usd: "0.75" },
+      image_uris: { normal: "https://example.com/banishing-light.jpg" },
+      promo: false,
+      oversized: false,
+    },
+  ],
+};
+
 describe("Integration Tests - App Functionality", () => {
   beforeEach(() => {
     localStorage.clear(); // Reset storage before each test
+    vi.clearAllMocks();
+
+    // Mock fetch to return our test data
+    global.fetch = vi.fn((url: string | URL | Request) => {
+      const urlString = url.toString();
+
+      if (urlString.includes("Evolving%20Wilds") || urlString.includes("Evolving Wilds")) {
+        return Promise.resolve(new Response(JSON.stringify(mockEvolvingWildsResponse), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }));
+      } else if (urlString.includes("Delighted%20Halfling") || urlString.includes("Delighted Halfling")) {
+        return Promise.resolve(new Response(JSON.stringify(mockDelightedHalflingResponse), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }));
+      } else if (urlString.includes("Banishing%20Light") || urlString.includes("Banishing Light")) {
+        return Promise.resolve(new Response(JSON.stringify(mockBanishingLightResponse), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }));
+      }
+
+      console.log("Unmatched URL:", urlString);
+      return Promise.reject(new Error(`Unknown card: ${urlString}`));
+    });
   });
 
   test("Filters by price and updates displayed cards", async () => {
