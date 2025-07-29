@@ -1,5 +1,5 @@
 import { describe, test, expect, vi, beforeEach } from "vitest";
-import { deselectCardFromSets, extractCardNames, fetchCardSets, cacheUtils, Card } from "../services/cardService";
+import { deselectCardFromSets, extractCardNames, fetchCardSets, cardCache, Card } from "../services/cardService";
 
 describe("extractCardNames", () => {
   test("Handles normal cards", () => {
@@ -494,128 +494,79 @@ describe("Card Service - API Error Handling", () => {
 });
 
 describe("Cache Management", () => {
-  beforeEach(() => {
-    localStorage.clear();
+  beforeEach(async () => {
+    await cardCache.clear();
     vi.clearAllMocks();
     vi.restoreAllMocks();
   });
 
   describe("getStorageSize", () => {
-    test("calculates storage size correctly", () => {
-      localStorage.setItem("test1", "hello");
-      localStorage.setItem("test2", "world");
+    test("calculates storage size correctly", async () => {
+      await cardCache.setItem("test1", { message: "hello" });
+      await cardCache.setItem("test2", { message: "world" });
 
-      const size = cacheUtils.getStorageSize();
-      expect(size).toBe("test1".length + "hello".length + "test2".length + "world".length);
+      const size = await cardCache.getStorageSize();
+      expect(size).toBeGreaterThan(0);
     });
 
-    test("returns 0 for empty storage", () => {
-      const size = cacheUtils.getStorageSize();
+    test("returns 0 for empty storage", async () => {
+      const size = await cardCache.getStorageSize();
       expect(size).toBe(0);
     });
   });
 
-  describe("clearOldestCacheEntries", () => {
-    test("clears oldest cache entries while keeping recent ones", () => {
-      const now = Date.now();
+  describe("clearOldestEntries", () => {
+    test("clears oldest cache entries while keeping recent ones", async () => {
+      // Add multiple cache entries
+      await cardCache.setItem("card_old1", { data: "old1" });
+      await cardCache.setItem("card_old2", { data: "old2" });
 
-      // Add multiple cache entries with different timestamps
-      localStorage.setItem("card_old1", JSON.stringify({ timestamp: now - 10000, data: {} }));
-      localStorage.setItem("card_old2", JSON.stringify({ timestamp: now - 5000, data: {} }));
-      localStorage.setItem("card_new1", JSON.stringify({ timestamp: now - 1000, data: {} }));
-      localStorage.setItem("card_new2", JSON.stringify({ timestamp: now, data: {} }));
-      localStorage.setItem("other_data", "should not be touched");
+      // Wait a bit to ensure different timestamps
+      await new Promise(resolve => setTimeout(resolve, 10));
 
-      cacheUtils.clearOldestCacheEntries(2);
+      await cardCache.setItem("card_new1", { data: "new1" });
+      await cardCache.setItem("card_new2", { data: "new2" });
 
-      // Should keep only 2 newest cache entries
-      expect(localStorage.getItem("card_old1")).toBeNull();
-      expect(localStorage.getItem("card_old2")).toBeNull();
-      expect(localStorage.getItem("card_new1")).not.toBeNull();
-      expect(localStorage.getItem("card_new2")).not.toBeNull();
-      expect(localStorage.getItem("other_data")).toBe("should not be touched");
+      await cardCache.clearOldestEntries(2);
+
+      const stats = await cardCache.getStats();
+      expect(stats.count).toBe(2);
+
+      // Should keep the newest entries
+      expect(await cardCache.getItem("card_new1")).not.toBeNull();
+      expect(await cardCache.getItem("card_new2")).not.toBeNull();
     });
 
-    test("handles invalid cache entries gracefully", () => {
-      localStorage.setItem("card_invalid", "invalid json");
-      localStorage.setItem("card_valid", JSON.stringify({ timestamp: Date.now(), data: {} }));
+    test("does nothing when keepCount is greater than existing entries", async () => {
+      await cardCache.setItem("card_test", { data: "test" });
 
-      expect(() => cacheUtils.clearOldestCacheEntries(1)).not.toThrow();
+      await cardCache.clearOldestEntries(10);
 
-      // Valid entry should be kept
-      expect(localStorage.getItem("card_valid")).not.toBeNull();
-    });
-
-    test("does nothing when keepCount is greater than existing entries", () => {
-      localStorage.setItem("card_test", JSON.stringify({ timestamp: Date.now(), data: {} }));
-
-      cacheUtils.clearOldestCacheEntries(10);
-
-      expect(localStorage.getItem("card_test")).not.toBeNull();
+      const item = await cardCache.getItem("card_test");
+      expect(item).not.toBeNull();
     });
   });
 
-  describe("safeSetItem", () => {
-    test("successfully sets item when storage is available", () => {
-      const result = cacheUtils.safeSetItem("test_key", "test_value");
+  describe("setItem", () => {
+    test("successfully sets and retrieves item", async () => {
+      const testData = { message: "test_value" };
+      const result = await cardCache.setItem("test_key", testData);
 
       expect(result).toBe(true);
-      expect(localStorage.getItem("test_key")).toBe("test_value");
+
+      const retrieved = await cardCache.getItem("test_key");
+      expect(retrieved).toEqual(testData);
     });
 
-    test("handles quota exceeded error by clearing cache and retrying", () => {
-      // Add some cache entries to be cleared BEFORE setting up the spy
-      localStorage.setItem("card_old", JSON.stringify({ timestamp: Date.now() - 10000, data: {} }));
+    test("handles storage errors gracefully", async () => {
+      // Mock IndexedDB to throw an error
+      vi.spyOn(cardCache, 'setItem').mockRejectedValueOnce(new Error('Storage error'));
 
-      // Mock localStorage.setItem to throw quota exceeded error on first call
-      let callCount = 0;
-      const originalSetItem = localStorage.setItem;
-
-      const setItemSpy = vi.spyOn(Storage.prototype, 'setItem');
-      setItemSpy.mockImplementation((key, value) => {
-        callCount++;
-        if (callCount === 1) {
-          const error = new DOMException('The quota has been exceeded', 'QuotaExceededError');
-          throw error;
-        }
-        return originalSetItem.call(localStorage, key, value);
-      });
-
-      const result = cacheUtils.safeSetItem("new_key", "new_value");
-
-      expect(result).toBe(true);
-      expect(localStorage.getItem("new_key")).toBe("new_value");
-      setItemSpy.mockRestore();
-    });
-
-    test("returns false when quota exceeded error persists after cleanup", () => {
-      // Mock localStorage.setItem to always throw quota exceeded error
-      const setItemSpy = vi.spyOn(Storage.prototype, 'setItem');
-      setItemSpy.mockImplementation(() => {
-        const error = new DOMException('The quota has been exceeded', 'QuotaExceededError');
-        throw error;
-      });
-
-      const result = cacheUtils.safeSetItem("test_key", "test_value");
-
+      const result = await cardCache.setItem("test_key", { data: "test" });
       expect(result).toBe(false);
-      setItemSpy.mockRestore();
     });
 
-    test("handles other storage errors gracefully", () => {
-      // Mock localStorage.setItem to throw a different error
-      const setItemSpy = vi.spyOn(Storage.prototype, 'setItem');
-      setItemSpy.mockImplementation(() => {
-        throw new Error('Some other error');
-      });
-
-      const result = cacheUtils.safeSetItem("test_key", "test_value");
-
-      expect(result).toBe(false);
-      setItemSpy.mockRestore();
-    });
-
-    test("processes card data even when caching fails due to quota exceeded", async () => {
+    test("processes card data even when caching fails", async () => {
       // Mock successful API response
       const mockApiResponse = {
         object: "list",
@@ -637,12 +588,8 @@ describe("Cache Management", () => {
         }))
       );
 
-      // Mock localStorage to always throw quota exceeded error
-      const setItemSpy = vi.spyOn(Storage.prototype, 'setItem');
-      setItemSpy.mockImplementation(() => {
-        const error = new DOMException('The quota has been exceeded', 'QuotaExceededError');
-        throw error;
-      });
+      // Mock cardCache to fail setItem
+      vi.spyOn(cardCache, 'setItem').mockResolvedValueOnce(false);
 
       const result = await fetchCardSets(["Test Card"]);
 
@@ -652,8 +599,6 @@ describe("Cache Management", () => {
       expect(result[0][1]).toHaveLength(1);
       expect(result[0][1][0].name).toBe("Test Card");
       expect(result[0][1][0].price).toBe(5.00);
-
-      setItemSpy.mockRestore();
     });
   });
 });

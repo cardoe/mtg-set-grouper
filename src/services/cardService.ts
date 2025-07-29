@@ -1,3 +1,5 @@
+import { cardCache } from './cardCache';
+
 type PriceCategory = "$" | "$$" | "$$$";
 
 export interface Card {
@@ -9,65 +11,6 @@ export interface Card {
 }
 
 type SetGroups = { [setName: string]: Card[] };
-
-// **LocalStorage management functions**
-const getStorageSize = (): number => {
-  let total = 0;
-  for (const key in localStorage) {
-    if (localStorage.hasOwnProperty(key)) {
-      total += localStorage[key].length + key.length;
-    }
-  }
-  return total;
-};
-
-const clearOldestCacheEntries = (keepCount: number = 50): void => {
-  const cacheKeys = Object.keys(localStorage)
-    .filter(key => key.startsWith('card_'))
-    .map(key => {
-      try {
-        const data = JSON.parse(localStorage.getItem(key) || '{}');
-        return { key, timestamp: data.timestamp || 0 };
-      } catch {
-        return { key, timestamp: 0 };
-      }
-    })
-    .sort((a, b) => a.timestamp - b.timestamp);
-
-  // Remove oldest entries, keeping only the specified count
-  const toRemove = cacheKeys.slice(0, Math.max(0, cacheKeys.length - keepCount));
-  toRemove.forEach(({ key }) => {
-    localStorage.removeItem(key);
-  });
-
-  if (toRemove.length > 0) {
-    console.log(`Cleared ${toRemove.length} old cache entries to free up space`);
-  }
-};
-
-const safeSetItem = (key: string, value: string): boolean => {
-  try {
-    localStorage.setItem(key, value);
-    return true;
-  } catch (error) {
-    if (error instanceof DOMException && error.name === 'QuotaExceededError') {
-      console.warn('LocalStorage quota exceeded, clearing old cache entries...');
-
-      // Clear oldest entries and try again
-      clearOldestCacheEntries(30);
-
-      try {
-        localStorage.setItem(key, value);
-        return true;
-      } catch (retryError) {
-        console.warn('Still unable to save to localStorage after cleanup, skipping cache for this item');
-        return false;
-      }
-    }
-    console.error('Error saving to localStorage:', error);
-    return false;
-  }
-};
 
 // **Extracts card names from text input**
 export const extractCardNames = (input: string): string[] => {
@@ -96,39 +39,30 @@ export const fetchCardSets = async (
   onProgress?: (current: number) => void
 ): Promise<[string, Card[]][]> => {
   const groups: SetGroups = {};
-  const CACHE_EXPIRATION_HOURS = 96;
   let processedCount = 0;
 
   for (const card of cardNames) {
     const cacheKey = `card_${card}`;
-    const cachedData = localStorage.getItem(cacheKey);
-    const now = Date.now();
 
-    if (cachedData) {
-      try {
-        const parsedCache = JSON.parse(cachedData);
+    // Try to get cached data
+    const cachedData = await cardCache.getItem(cacheKey);
 
-        if (parsedCache.timestamp && parsedCache.data && parsedCache.data.object && parsedCache.data.object === "list") {
-          const isFresh = now - parsedCache.timestamp < CACHE_EXPIRATION_HOURS * 60 * 60 * 1000;
-
-          if (isFresh) {
-            console.log(`Using cached data for ${card}`);
-            processScryfallData(parsedCache.data, groups);
-            processedCount++;
-            onProgress?.(processedCount);
-            continue;
-          }
-        } else {
-          console.warn(`Cache format outdated for ${card}, fetching new data.`);
-        }
-      } catch (error) {
-        console.error(`Error parsing cache for ${card}:`, error);
-      }
+    if (cachedData && cachedData.object === "list") {
+      console.log(`Using cached data for ${card}`);
+      processScryfallData(cachedData, groups);
+      processedCount++;
+      onProgress?.(processedCount);
+      continue;
     }
 
     console.log(`Fetching fresh data for ${card}`);
     try {
       const response = await fetch(`https://api.scryfall.com/cards/search?q=!"${encodeURIComponent(card)}"&unique=prints`);
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
       const data = await response.json();
 
       if (data.data && data.object && data.object === "list") {
@@ -136,8 +70,7 @@ export const fetchCardSets = async (
         processScryfallData(data, groups);
 
         // Then try to cache it for future use
-        const cacheData = JSON.stringify({ timestamp: now, data });
-        const cached = safeSetItem(cacheKey, cacheData);
+        const cached = await cardCache.setItem(cacheKey, data);
         if (!cached) {
           console.warn(`Unable to cache data for ${card}, but card data is still processed`);
         }
@@ -192,9 +125,5 @@ export const deselectCardFromSets = (setGroups: [string, Card[]][], cardName: st
     .filter(([_, cards]) => cards.length > 0);
 };
 
-// **Export utility functions for testing**
-export const cacheUtils = {
-  getStorageSize,
-  clearOldestCacheEntries,
-  safeSetItem
-};
+// **Export cache utilities for testing and management**
+export { cardCache };

@@ -14,6 +14,7 @@
   "dependencies": {
     "bootstrap": "^5.3.3",
     "file-saver": "^2.0.5",
+    "idb": "^8.0.3",
     "papaparse": "^5.5.2",
     "react": "^19.0.0",
     "react-bootstrap": "^2.10.9",
@@ -32,6 +33,7 @@
     "eslint": "^9.19.0",
     "eslint-plugin-react-hooks": "^5.0.0",
     "eslint-plugin-react-refresh": "^0.4.18",
+    "fake-indexeddb": "^6.0.1",
     "globals": "^15.14.0",
     "jsdom": "^26.0.0",
     "typescript": "~5.7.2",
