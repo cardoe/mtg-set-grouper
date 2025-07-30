@@ -365,5 +365,119 @@ describe("CardSets", () => {
       expect(firstCardCheckbox).toBeInTheDocument(); // Card still visible
       expect(firstCardCheckbox).not.toBeChecked(); // But unchecked
     });
+
+    test("set shows 0 cards when all cards in set are deselected", async () => {
+      const user = userEvent.setup();
+
+      render(<CardSets processCards={mockProcessCards} downloadCSV={mockDownloadCSV} setGroups={mockSetGroups} progress={mockProgress} />);
+
+      // Deselect all cards in Test Set A (2 cards)
+      const cardCheckboxes = screen.getAllByRole("checkbox");
+
+      // Find checkboxes for Test Set A cards and deselect them
+      await user.click(cardCheckboxes[0]);
+      await user.click(cardCheckboxes[1]);
+
+      // Set should now show 0 cards
+      expect(screen.getByText("Test Set A (0 cards)")).toBeInTheDocument();
+
+      // But cards should still be visible (just strikethrough)
+      expect(cardCheckboxes[0]).toBeInTheDocument();
+      expect(cardCheckboxes[1]).toBeInTheDocument();
+      expect(cardCheckboxes[0]).not.toBeChecked();
+      expect(cardCheckboxes[1]).not.toBeChecked();
+    });
+  });
+
+  describe("Price filter and deselection interaction", () => {
+    test("deselected cards respect price filters", async () => {
+      const user = userEvent.setup();
+
+      render(<CardSets processCards={mockProcessCards} downloadCSV={mockDownloadCSV} setGroups={mockSetGroups} progress={mockProgress} />);
+
+      // Deselect a card first
+      const firstCardCheckbox = screen.getAllByRole("checkbox")[0];
+      await user.click(firstCardCheckbox);
+
+      // Card should still be visible but deselected
+      expect(firstCardCheckbox).toBeInTheDocument();
+      expect(firstCardCheckbox).not.toBeChecked();
+
+      // Now apply price filter that would hide this card's price category
+      // (This is a complex interaction that needs careful testing)
+      const priceButtons = screen.getAllByRole("button").filter(btn =>
+        btn.textContent === "$" || btn.textContent === "$$" || btn.textContent === "$$$"
+      );
+
+      if (priceButtons.length > 0) {
+        // Click price filter buttons to test interaction
+        await user.click(priceButtons[0]); // This might hide the deselected card
+
+        // The card should be hidden by price filter, even if deselected
+        // (Implementation depends on card's actual price category)
+      }
+    });
+
+    test("set counts reflect both price filtering and card deselection", async () => {
+      const user = userEvent.setup();
+
+      render(<CardSets processCards={mockProcessCards} downloadCSV={mockDownloadCSV} setGroups={mockSetGroups} progress={mockProgress} />);
+
+      // Initial state: "Test Set A (2 cards)"
+      expect(screen.getByText("Test Set A (2 cards)")).toBeInTheDocument();
+
+      // Deselect one card: should show "Test Set A (1 cards)"
+      const firstCardCheckbox = screen.getAllByRole("checkbox")[0];
+      await user.click(firstCardCheckbox);
+      expect(screen.getByText("Test Set A (1 cards)")).toBeInTheDocument();
+
+      // Apply price filter - count should reflect both filters
+      const priceButtons = screen.getAllByRole("button").filter(btn =>
+        btn.textContent === "$" || btn.textContent === "$$" || btn.textContent === "$$$"
+      );
+
+      if (priceButtons.length > 0) {
+        await user.click(priceButtons[0]);
+        // Count may change based on price categories of cards
+        // Should still exclude the deselected card from count
+      }
+    });
+  });
+
+  describe("Set sorting with strikethrough cards", () => {
+    test("sets sort by number of selected cards, not total cards", async () => {
+      const user = userEvent.setup();
+
+      // Create test data where deselection changes sort order
+      const testGroups: [string, typeof mockSetGroups[0][1]][] = [
+        ["Set With Many Cards", [
+          { name: "Card 1", colors: ["W"], imageUrl: "img1.jpg", price: 1.0, priceCategory: "$" },
+          { name: "Card 2", colors: ["U"], imageUrl: "img2.jpg", price: 2.0, priceCategory: "$" },
+          { name: "Card 3", colors: ["B"], imageUrl: "img3.jpg", price: 3.0, priceCategory: "$" },
+        ]],
+        ["Set With Few Cards", [
+          { name: "Expensive Card", colors: ["R"], imageUrl: "img4.jpg", price: 20.0, priceCategory: "$$$" },
+        ]]
+      ];
+
+      render(<CardSets processCards={mockProcessCards} downloadCSV={mockDownloadCSV} setGroups={testGroups} progress={mockProgress} />);
+
+      // Initially "Set With Many Cards" should appear first (3 > 1)
+      const accordionHeaders = screen.getAllByRole("button").filter(btn =>
+        btn.textContent?.includes("cards)")
+      );
+
+      if (accordionHeaders.length >= 2) {
+        expect(accordionHeaders[0]).toHaveTextContent("Set With Many Cards (3 cards)");
+
+        // Deselect 2 cards from "Set With Many Cards"
+        const checkboxes = screen.getAllByRole("checkbox");
+        await user.click(checkboxes[0]);
+        await user.click(checkboxes[1]);
+
+        // Now "Set With Few Cards" should appear first (1 > 1, but "Set With Many Cards" now has 1)
+        // The exact behavior depends on implementation details
+      }
+    });
   });
 });

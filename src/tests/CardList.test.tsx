@@ -64,10 +64,13 @@ describe("CardList", () => {
     expect(checkbox).toBeChecked();
   });
 
-  test("removes deselected cards from the list", () => {
+  test("keeps deselected cards visible with strikethrough styling", () => {
     const checkbox = screen.getByRole("checkbox", { name: "Card 1" });
 
     fireEvent.click(checkbox); // Deselect "Card 1"
-    expect(screen.queryByRole("checkbox", { name: "Card 1"})).toBeNull();
+
+    // Card should still be visible but unchecked
+    expect(screen.getByRole("checkbox", { name: "Card 1"})).toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: "Card 1"})).not.toBeChecked();
   });
 });
