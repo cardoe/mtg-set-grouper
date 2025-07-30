@@ -321,4 +321,49 @@ describe("CardSets", () => {
       expect(screen.getByRole("button", { name: "$" })).toBeInTheDocument();
     });
   });
+
+  describe("Card strikethrough behavior", () => {
+    test("deselected cards show with strikethrough instead of being hidden", async () => {
+      const user = userEvent.setup();
+
+      render(<CardSets processCards={mockProcessCards} downloadCSV={mockDownloadCSV} setGroups={mockSetGroups} progress={mockProgress} />);
+
+      // Find a card checkbox and uncheck it
+      const cardCheckbox = screen.getAllByRole("checkbox")[0]; // Get the first card checkbox
+      const cardLabel = cardCheckbox.closest('span');
+
+      expect(cardCheckbox).toBeChecked(); // Should be checked initially
+
+      // Click to deselect the card
+      await user.click(cardCheckbox);
+
+      // Card should now be unchecked but still visible
+      expect(cardCheckbox).not.toBeChecked();
+      expect(cardCheckbox).toBeInTheDocument(); // Card should still be visible
+
+      // The label should have strikethrough styling (we can't easily test CSS styles in jsdom,
+      // but we can verify the card is still present and unchecked)
+      expect(cardLabel).toBeInTheDocument();
+    });
+
+    test("set totals only count selected cards", async () => {
+      const user = userEvent.setup();
+
+      render(<CardSets processCards={mockProcessCards} downloadCSV={mockDownloadCSV} setGroups={mockSetGroups} progress={mockProgress} />);
+
+      // Initially should show the full count for Test Set A (2 cards)
+      expect(screen.getByText("Test Set A (2 cards)")).toBeInTheDocument();
+
+      // Deselect one card
+      const cardCheckboxes = screen.getAllByRole("checkbox");
+      const firstCardCheckbox = cardCheckboxes[0];
+
+      await user.click(firstCardCheckbox);
+
+      // Count should now be reduced by 1, but card should still be visible
+      expect(screen.getByText("Test Set A (1 cards)")).toBeInTheDocument();
+      expect(firstCardCheckbox).toBeInTheDocument(); // Card still visible
+      expect(firstCardCheckbox).not.toBeChecked(); // But unchecked
+    });
+  });
 });

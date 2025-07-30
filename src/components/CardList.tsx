@@ -38,14 +38,16 @@ const CardList: React.FC<CardListProps> = ({ setGroups }) => {
   const sortedFilteredGroups = useMemo(() => {
     return setGroups
       .map(([setName, cards]) => {
-        // Apply price filter and deselected cards filter
-        const filteredCards = cards
-          .filter((card) => priceFilters[card.priceCategory] && !deselectedCards.has(card.name));
+        // Apply only price filter - keep deselected cards but show them differently
+        const filteredCards = cards.filter((card) => priceFilters[card.priceCategory]);
 
-        return [setName, filteredCards] as [string, Card[]];
+        // Calculate count of selected cards for sorting and display
+        const selectedCount = filteredCards.filter((card) => !deselectedCards.has(card.name)).length;
+
+        return [setName, filteredCards, selectedCount] as [string, Card[], number];
       })
-      .filter(([_, cards]) => cards.length > 0)
-      .sort((a, b) => b[1].length - a[1].length); // Resort by number of matching cards
+      .filter(([_, cards]) => cards.length > 0) // Show sets that have any cards matching price filter
+      .sort((a, b) => b[2] - a[2]); // Sort by number of selected cards
   }, [setGroups, deselectedCards, priceFilters]);
 
   return (
@@ -65,9 +67,9 @@ const CardList: React.FC<CardListProps> = ({ setGroups }) => {
       )}
 
       <Accordion className="mt-4">
-        {sortedFilteredGroups.map(([setName, cards]) => (
+        {sortedFilteredGroups.map(([setName, cards, selectedCount]) => (
           <Accordion.Item eventKey={setName} key={setName}>
-            <Accordion.Header>{setName} ({cards.length} cards)</Accordion.Header>
+            <Accordion.Header>{setName} ({selectedCount} cards)</Accordion.Header>
             <Accordion.Body>
               {cards.map((card) => (
                 <CardPrint

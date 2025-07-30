@@ -25,10 +25,16 @@ const CardPrint: React.FC<CardPrintProps> = ({ cardName, setName, colors, price,
         checked={isSelected}
         onChange={() => onToggle(cardName)}
         label={
-          <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <span style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            textDecoration: isSelected ? "none" : "line-through",
+            opacity: isSelected ? 1 : 0.6
+          }}>
             <span
               onClick={onShowImage}
-              style={{ cursor: "pointer", textDecoration: "underline" }}
+              style={{ cursor: "pointer", textDecoration: isSelected ? "underline" : "underline line-through" }}
             >
               {cardName}
             </span>
