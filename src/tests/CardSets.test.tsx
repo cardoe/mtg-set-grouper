@@ -288,4 +288,37 @@ describe("CardSets", () => {
       expect(screen.getByText("Download CSV")).toBeInTheDocument();
     });
   });
+
+  describe("Price filter bug fix", () => {
+    test("price filter buttons remain visible when all filters are deselected", async () => {
+      const user = userEvent.setup();
+
+      render(<CardSets processCards={mockProcessCards} downloadCSV={mockDownloadCSV} setGroups={mockSetGroups} progress={mockProgress} />);
+
+      // All price filter buttons should be visible initially
+      const dollarButton = screen.getByRole("button", { name: "$" });
+      const dollarDollarButton = screen.getByRole("button", { name: "$$" });
+      const dollarDollarDollarButton = screen.getByRole("button", { name: "$$$" });
+
+      expect(dollarButton).toBeInTheDocument();
+      expect(dollarDollarButton).toBeInTheDocument();
+      expect(dollarDollarDollarButton).toBeInTheDocument();
+
+      // Click all three buttons to deselect them
+      await user.click(dollarButton);
+      await user.click(dollarDollarButton);
+      await user.click(dollarDollarDollarButton);
+
+      // All buttons should still be visible even when all filters are deselected
+      expect(screen.getByRole("button", { name: "$" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "$$" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "$$$" })).toBeInTheDocument();
+
+      // User should be able to click buttons to re-enable filters
+      await user.click(screen.getByRole("button", { name: "$" }));
+
+      // Button should be re-enabled and cards should be visible again
+      expect(screen.getByRole("button", { name: "$" })).toBeInTheDocument();
+    });
+  });
 });

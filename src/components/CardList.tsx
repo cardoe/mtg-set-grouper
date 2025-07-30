@@ -50,7 +50,7 @@ const CardList: React.FC<CardListProps> = ({ setGroups }) => {
 
   return (
     <div data-testid="card-results">
-      {sortedFilteredGroups.length > 0 && (
+      {setGroups.length > 0 && (
         <div className="price-filters d-flex gap-2 mb-3">
           {Object.keys(priceFilters).map((price) => (
             <Button
