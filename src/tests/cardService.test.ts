@@ -212,7 +212,7 @@ describe("Card Service - Deselecting and Filtering", () => {
     expect(updatedSetGroups.length).toBe(2); // Both sets should still exist
     expect(updatedSetGroups[0][1]).toHaveLength(1); // "Set A" should have 1 card left
     expect(updatedSetGroups[1][1]).toHaveLength(1); // "Set B" should have 1 card left
-    expect(updatedSetGroups.some(([_, cards]) => cards.some((c) => c.name === "Evolving Wilds"))).toBe(false);
+    expect(updatedSetGroups.some(([, cards]) => cards.some((c) => c.name === "Evolving Wilds"))).toBe(false);
   });
 
   test("Deselecting a card that is not in any set has no effect", () => {
@@ -239,7 +239,7 @@ describe("Card Service - Deselecting and Filtering", () => {
       cards.filter((card) => priceFilters[card.priceCategory]),
     ]);
 
-    expect(filteredSets.every(([_, cards]) => cards.length === 0)).toBe(true);
+    expect(filteredSets.every(([, cards]) => cards.length === 0)).toBe(true);
   });
 });
 

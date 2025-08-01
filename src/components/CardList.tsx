@@ -23,7 +23,11 @@ const CardList: React.FC<CardListProps> = ({ setGroups }) => {
   const toggleCardSelection = (cardName: string) => {
     setDeselectedCards((prev) => {
       const updated = new Set(prev);
-      updated.has(cardName) ? updated.delete(cardName) : updated.add(cardName);
+      if (updated.has(cardName)) {
+        updated.delete(cardName);
+      } else {
+        updated.add(cardName);
+      }
       return new Set(updated);
     });
   };
@@ -46,7 +50,7 @@ const CardList: React.FC<CardListProps> = ({ setGroups }) => {
 
         return [setName, filteredCards, selectedCount] as [string, Card[], number];
       })
-      .filter(([_, cards]) => cards.length > 0) // Show sets that have any cards matching price filter
+      .filter(([, cards]) => cards.length > 0) // Show sets that have any cards matching price filter
       .sort((a, b) => b[2] - a[2]); // Sort by number of selected cards
   }, [setGroups, deselectedCards, priceFilters]);
 

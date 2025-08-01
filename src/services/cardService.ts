@@ -12,6 +12,25 @@ export interface Card {
 
 type SetGroups = { [setName: string]: Card[] };
 
+interface ScryfallCard {
+  name: string;
+  set_name: string;
+  promo?: boolean;
+  oversized?: boolean;
+  color_identity?: string[];
+  prices?: {
+    usd?: string;
+  };
+  image_uris?: {
+    normal?: string;
+  };
+}
+
+interface ScryfallResponse {
+  object: string;
+  data: ScryfallCard[];
+}
+
 // **Extracts card names from text input**
 export const extractCardNames = (input: string): string[] => {
   const cardRegex = /^(?:\d+\s+)?(.+?)(?:\s*\([A-Z0-9]+\))?(?:\s+[A-Z0-9-]+\d+|\s+\*\w*\*)?$/;
@@ -45,7 +64,7 @@ export const fetchCardSets = async (
     const cacheKey = `card_${card}`;
 
     // Try to get cached data
-    const cachedData = await cardCache.getItem(cacheKey);
+    const cachedData = await cardCache.getItem(cacheKey) as ScryfallResponse | null;
 
     if (cachedData && cachedData.object === "list") {
       console.log(`Using cached data for ${card}`);
@@ -63,7 +82,7 @@ export const fetchCardSets = async (
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      const data = await response.json();
+      const data = await response.json() as ScryfallResponse;
 
       if (data.data && data.object && data.object === "list") {
         // Always process the data first, regardless of caching success
@@ -88,8 +107,8 @@ export const fetchCardSets = async (
   return Object.entries(groups).sort((a, b) => b[1].length - a[1].length);
 };
 
-const processScryfallData = (data: any, groups: SetGroups) => {
-  data.data.forEach((cardData: any) => {
+const processScryfallData = (data: ScryfallResponse, groups: SetGroups) => {
+  data.data.forEach((cardData: ScryfallCard) => {
     // filter out promo and oversized cards
     if (
       cardData.promo ||
@@ -122,7 +141,7 @@ const processScryfallData = (data: any, groups: SetGroups) => {
 export const deselectCardFromSets = (setGroups: [string, Card[]][], cardName: string) => {
   return setGroups
     .map(([setName, cards]) => [setName, cards.filter((c) => c.name !== cardName)] as [string, Card[]])
-    .filter(([_, cards]) => cards.length > 0);
+    .filter(([, cards]) => cards.length > 0);
 };
 
 // **Export cache utilities for testing and management**

@@ -2,7 +2,7 @@ import { openDB, DBSchema, IDBPDatabase } from 'idb';
 
 interface CacheEntry {
   timestamp: number;
-  data: any;
+  data: unknown;
 }
 
 interface CardCacheDB extends DBSchema {
@@ -34,7 +34,7 @@ class CardCache {
     });
   }
 
-  async setItem(key: string, data: any): Promise<boolean> {
+  async setItem(key: string, data: unknown): Promise<boolean> {
     try {
       const db = await this.dbPromise;
       const entry: CacheEntry = {
@@ -50,7 +50,7 @@ class CardCache {
     }
   }
 
-  async getItem(key: string): Promise<any | null> {
+  async getItem(key: string): Promise<unknown | null> {
     try {
       const db = await this.dbPromise;
       const entry = await db.get(STORE_NAME, key);
