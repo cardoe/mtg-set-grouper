@@ -131,12 +131,16 @@ describe("Integration Tests - App Functionality", () => {
     const evolvingWildsElements = await screen.findAllByText("Evolving Wilds");
     expect(evolvingWildsElements.length).toBeGreaterThan(1);
 
-    // Click the first instance of "Evolving Wilds"
+    // Click the first instance of "Evolving Wilds" to deselect it
     const checkboxes = screen.getAllByRole("checkbox", { name: /Evolving Wilds/i });
     await userEvent.click(checkboxes[0]);
 
-    // Expect all instances of "Evolving Wilds" to be removed
-    expect(screen.queryByText("Evolving Wilds")).toBeNull();
+    // Expect all instances of "Evolving Wilds" to be shown with strikethrough
+    const evolvingWildsElementsAfter = screen.getAllByText("Evolving Wilds");
+    evolvingWildsElementsAfter.forEach(element => {
+      const style = element.getAttribute('style') || '';
+      expect(style).toContain("line-through");
+    });
   });
 
   test("Clicking a card name displays its image", async () => {
