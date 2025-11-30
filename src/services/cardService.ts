@@ -119,6 +119,12 @@ const processScryfallData = (data: ScryfallResponse, groups: SetGroups) => {
 
     const setName: string = cardData.set_name;
     const price = parseFloat(cardData.prices?.usd || "0");
+
+    // Skip cards with no price data
+    if (price === 0) {
+      return;
+    }
+
     const priceCategory = price < 1 ? "$" : price < 5 ? "$$" : "$$$";
 
     if (!groups[setName]) {

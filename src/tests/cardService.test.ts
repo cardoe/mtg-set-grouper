@@ -490,13 +490,8 @@ describe("Card Service - API Error Handling", () => {
 
     const result = await fetchCardSets(["Lightning Bolt"]);
 
-    // Should still process the card, filling in defaults for missing fields
-    expect(result).toHaveLength(1);
-    expect(result[0][1]).toHaveLength(1);
-    expect(result[0][1][0].name).toBe("Lightning Bolt");
-    expect(result[0][1][0].colors).toEqual([]);
-    expect(result[0][1][0].price).toBe(0);
-    expect(result[0][1][0].imageUrl).toBe("");
+    // Cards with missing price data (defaulting to $0) should be filtered out
+    expect(result).toHaveLength(0);
   });
 });
 
